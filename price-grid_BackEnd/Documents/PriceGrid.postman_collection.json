@@ -1,0 +1,72 @@
+{
+	"info": {
+		"_postman_id": "a847c880-f89a-4177-a3b9-aac95a952507",
+		"name": "PriceGrid",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "25036277",
+		"_collection_link": "https://crimson-capsule-2984.postman.co/workspace/My-Workspace~c43e5630-3b4e-43f8-8f1c-9e96e8a62803/collection/25036277-a847c880-f89a-4177-a3b9-aac95a952507?action=share&source=collection_link&creator=25036277"
+	},
+	"item": [
+		{
+			"name": "getPriceDetails",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/getPriceDetails",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"getPriceDetails"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "createPriceGrid",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"height\": 100,\r\n    \"width\": 20,\r\n    \"price\": 12\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/createPriceGrid",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"createPriceGrid"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
