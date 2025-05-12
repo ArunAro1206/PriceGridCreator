@@ -65,7 +65,22 @@ public class PriceGridService {
         }
 
         try {
-            priceGridRepository.saveAll(updatedEntries);
+            List<PriceCell> updatedList = new ArrayList<>();
+            for (PriceCell entry : updatedEntries) {
+                Optional<PriceCell> existing = priceGridRepository
+                        .findByWidthAndHeight(entry.getWidth(), entry.getHeight());
+
+                if (existing.isPresent()) {
+                    PriceCell cell = existing.get();
+                    cell.setPrice(entry.getPrice());
+                    updatedList.add(cell);
+                } else {
+                    // Optional: decide if you want to add new entries if not found
+                    updatedList.add(entry); // this will create a new entry
+                }
+            }
+
+            priceGridRepository.saveAll(updatedList);
             return new UpdatePriceResponse(true, "Prices updated successfully.");
         } catch (Exception e) {
             e.printStackTrace();
