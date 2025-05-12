@@ -18,16 +18,22 @@ public class PriceGridService {
     @Autowired
     private PriceGridRepository priceGridRepository;
 
+    public CreatePriceGridResponse createPriceGrid(CreatePriceGridRequest request) {
+        int width = request.getWidth();
+        int height = request.getHeight();
+        double price = request.getPrice();
 
-    public CreatePriceGridResponse createPriceGrid(CreatePriceGridRequest createPriceGridRequest){
-        int width= createPriceGridRequest.getWidth();
-        int height= createPriceGridRequest.getHeight();
-        double price= createPriceGridRequest.getPrice();
-
-        PriceCell priceCell=new PriceCell(width,height,price);
-        priceGridRepository.save(priceCell);
-        return new CreatePriceGridResponse(true,0);
+        Optional<PriceCell> priceCellOptional = priceGridRepository.findByWidthAndHeightAndPrice(width, height, price);
+        if (priceCellOptional.isEmpty()) {
+            PriceCell priceCell = new PriceCell(width, height, price);
+            priceGridRepository.save(priceCell);
+        } else {
+            return new CreatePriceGridResponse(false, 1);//1- means already created
+        }
+        return new CreatePriceGridResponse(true, 0);
     }
+
+
     public PriceGridResponse getPriceGrid() {
         List<PriceCell> priceCellList = priceGridRepository.findAll();
 
@@ -35,29 +41,41 @@ public class PriceGridService {
             return new PriceGridResponse(List.of(), List.of(), List.of(), 1);
         }
 
-        Set<Integer> uniqueHeights = priceCellList.stream().map(PriceCell::getHeight).collect(Collectors.toSet());
-        Set<Integer> uniqueWidths = priceCellList.stream().map(PriceCell::getWidth).collect(Collectors.toSet());
+        Set<Integer> uniqueHeights = priceCellList.stream()
+                .map(PriceCell::getHeight)
+                .collect(Collectors.toCollection(TreeSet::new));
 
-        List<Integer> sortedHeights = uniqueHeights.stream().sorted().toList();
-        List<Integer> sortedWidths = uniqueWidths.stream().sorted().toList();
+        Set<Integer> uniqueWidths = priceCellList.stream()
+                .map(PriceCell::getWidth)
+                .collect(Collectors.toCollection(TreeSet::new));
+
+        List<Integer> sortedHeights = new ArrayList<>(uniqueHeights);
+        List<Integer> sortedWidths = new ArrayList<>(uniqueWidths);
+
+        Map<String, Double> priceMap = new HashMap<>();
+        for (PriceCell cell : priceCellList) {
+            String key = cell.getHeight() + "_" + cell.getWidth();
+            priceMap.put(key, cell.getPrice());
+        }
 
         List<PriceGridResponse.HeightPriceRow> rows = new ArrayList<>();
         for (Integer height : sortedHeights) {
-            List<Double> rowPrices = sortedWidths.stream()
-                    .map(width -> priceCellList.stream()
-                            .filter(e -> e.getHeight() == height && e.getWidth() == width)
-                            .map(PriceCell::getPrice)
-                            .findFirst()
-                            .orElse(0.0))
-                    .toList();
+            List<Double> rowPrices = new ArrayList<>();
+
+            for (Integer width : sortedWidths) {
+                String key = height + "_" + width;
+                rowPrices.add(priceMap.getOrDefault(key, 0.0));
+            }
 
             PriceGridResponse.HeightPriceRow row = new PriceGridResponse.HeightPriceRow();
             row.setHeight(height);
             row.setValues(rowPrices);
             rows.add(row);
         }
+
         return new PriceGridResponse(sortedHeights, sortedWidths, rows, 0);
     }
+
 
     public UpdatePriceResponse updatePrices(List<PriceCell> updatedEntries) {
         if (updatedEntries == null || updatedEntries.isEmpty()) {
@@ -65,26 +83,27 @@ public class PriceGridService {
         }
 
         try {
-            List<PriceCell> updatedList = new ArrayList<>();
+            List<PriceCell> toSave = new ArrayList<>();
+
             for (PriceCell entry : updatedEntries) {
-                Optional<PriceCell> existing = priceGridRepository
-                        .findByWidthAndHeight(entry.getWidth(), entry.getHeight());
+                Optional<PriceCell> existing = priceGridRepository.findByWidthAndHeight(entry.getWidth(), entry.getHeight());
 
                 if (existing.isPresent()) {
                     PriceCell cell = existing.get();
                     cell.setPrice(entry.getPrice());
-                    updatedList.add(cell);
+                    toSave.add(cell);
                 } else {
-                    // Optional: decide if you want to add new entries if not found
-                    updatedList.add(entry); // this will create a new entry
+                    PriceCell newCell = new PriceCell(entry.getWidth(), entry.getHeight(), entry.getPrice());
+                    toSave.add(newCell);
                 }
             }
 
-            priceGridRepository.saveAll(updatedList);
+            priceGridRepository.saveAll(toSave);
             return new UpdatePriceResponse(true, "Prices updated successfully.");
         } catch (Exception e) {
-            e.printStackTrace();
             return new UpdatePriceResponse(false, "Failed to update prices: " + e.getMessage());
         }
     }
+
+
 }
